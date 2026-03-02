@@ -2,10 +2,33 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useCart } from '@/components/CartProvider';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Something went wrong. Please try again.');
+        setLoading(false);
+      }
+    } catch {
+      alert('Something went wrong. Please try again.');
+      setLoading(false);
+    }
+  };
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -115,10 +138,11 @@ export default function CartPage() {
             </div>
 
             <button
-              className="w-full bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors mb-3"
-              onClick={() => alert('Checkout coming soon!')}
+              className="w-full bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleCheckout}
+              disabled={loading}
             >
-              Proceed to Checkout
+              {loading ? 'Redirecting...' : 'Proceed to Checkout'}
             </button>
 
             <button
